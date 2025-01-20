@@ -1,0 +1,198 @@
+import fr.dgac.ivy.Ivy;
+import fr.dgac.ivy.IvyClient;
+import fr.dgac.ivy.IvyException;
+import fr.dgac.ivy.IvyMessageListener;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Scanner;
+
+public class RecoGeste implements IvyMessageListener {
+    private static final String FILE_PATH = "gestures.ser";
+    private Stroke currentStroke;
+    private Map<String, Stroke> gestureDictionary;
+    private double treshold = 268.0;
+    public Mode getMode() {
+        return mode;
+    }
+
+    public void setMode(Mode mode) {
+        this.mode = mode;
+    }
+
+    private Mode mode = Mode.APPRENTISSAGE;
+    private Ivy bus;
+    Scanner scanner = new Scanner(System.in);
+    public RecoGeste() throws IvyException{
+        gestureDictionary = loadGestureDictionary();
+        if (gestureDictionary == null) {
+            gestureDictionary = new HashMap<>();
+        }
+        bus = new Ivy("InteractionPalette", "InteractionPalette Ready", null);
+        bus.start(null);
+
+        bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
+            currentStroke = new Stroke();
+            dessinerCercle(args, "green");
+            if (mode == Mode.APPRENTISSAGE) {
+                currentStroke.init(); // Réinitialisation du tracé
+                currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+            }
+        });
+        // Gestion des événements de souris pour dessiner des cercles
+        bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
+            currentStroke = new Stroke();
+            dessinerCercle(args, "green");
+            if (mode == Mode.APPRENTISSAGE) {
+                currentStroke.init(); // Réinitialisation du tracé
+                currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+            }
+        });
+
+        bus.bindMsg("^Palette:MouseDragged x=(\\d+) y=(\\d+)", (client, args) -> {
+            dessinerCercle(args, "gray");
+            if (mode == Mode.APPRENTISSAGE || mode == Mode.RECONNAISSANCE) {
+                currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
+            }
+        });
+
+        bus.bindMsg("^Palette:MouseReleased x=(\\d+) y=(\\d+)", (client, args) -> {
+            dessinerCercle(args, "red");
+            if (mode == Mode.APPRENTISSAGE) {
+                apprendreGeste(); // Apprentissage du geste
+            } else if (mode == Mode.RECONNAISSANCE) {
+                try {
+                    reconnaitreGeste(); // Reconnaissance du geste
+                } catch (IvyException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            effacerTracesApresDelai();
+        });
+
+    }
+
+    public void saveGestureDictionary() {
+        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(FILE_PATH))) {
+            oos.writeObject(gestureDictionary);
+            System.out.println("Dictionnaire sauvegardé dans " + FILE_PATH);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Méthode pour désérialiser et charger le dictionnaire
+    @SuppressWarnings("unchecked")
+    private Map<String, Stroke> loadGestureDictionary() {
+        File file = new File(FILE_PATH);
+        if (!file.exists()) {
+            System.out.println("Fichier de gestes non trouvé. Un nouveau dictionnaire sera créé.");
+            return null;
+        }
+        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream(FILE_PATH))) {
+            return (Map<String, Stroke>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    // Méthode pour dessiner un cercle
+    private void dessinerCercle(String[] args, String couleur) {
+        int x = Integer.parseInt(args[0]);
+        int y = Integer.parseInt(args[1]);
+        String circleMsg = String.format("Palette:CreerEllipse x=%d y=%d longueur=10 hauteur=10 couleurFond=%s", x - 5, y - 5, couleur);
+        try {
+            bus.sendMsg(circleMsg);
+            currentStroke.addPoint(x, y);
+            System.out.println("Cercle " + couleur + " créé autour du pointeur (" + x + ", " + y + ")");
+        } catch (IvyException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // Méthode pour effacer les traces après un délai
+    private void effacerTracesApresDelai() {
+        new Thread(() -> {
+            try {
+                Thread.sleep(1000); // Délai de 1 seconde
+                currentStroke = new Stroke();
+                bus.sendMsg("Palette:SupprimerTout");
+                System.out.println("Traces effacées.");
+            } catch (InterruptedException | IvyException e) {
+                e.printStackTrace();
+            }
+        }).start();
+    }
+
+    @Override
+    public void receive(IvyClient client, String[] args) {
+
+    }
+    private void apprendreGeste() {
+        System.out.println("Entrez le nom de la commande pour ce geste : ");
+        try  {
+            String commandName = scanner.nextLine();
+            currentStroke.normalize();
+            gestureDictionary.put(commandName, currentStroke);
+            saveGestureDictionary();
+            System.out.println("Geste appris et associé à la commande : " + commandName);
+        } catch (Exception e ){
+            e.printStackTrace();
+        }
+    }
+
+    // Reconnaissance d'un geste
+    private void reconnaitreGeste() throws IvyException {
+        String recognizedCommand = null;
+        double minDistance = Double.MAX_VALUE;
+        currentStroke.normalize();
+        for (Map.Entry<String, Stroke> entry : gestureDictionary.entrySet()) {
+            double distance = calculateDistance(currentStroke, entry.getValue());
+            if (distance < minDistance) {
+                minDistance = distance;
+                recognizedCommand = entry.getKey();
+            }
+        }
+        System.out.println("Distance minimale : " + minDistance);
+        if (recognizedCommand != null && minDistance < treshold) {
+            bus.sendMsg("Palette:CommandeReconnue commande=" + recognizedCommand);
+            System.out.println("Geste reconnu : " + recognizedCommand + "distance :" + minDistance);
+            envoyerCommandeReconnaissance(recognizedCommand);
+        } else {
+            System.out.println("Aucun geste reconnu.");
+        }
+    }
+
+    private double calculateDistance(Stroke s1, Stroke s2) {
+        double distance = 0.0;
+
+
+        var points1 = s1.getPoints();
+        var points2 = s2.getPoints();
+
+        int size = Math.min(points1.size(), points2.size());
+        for (int i = 0; i < size; i++) {
+            distance += points1.get(i).distance(points2.get(i));
+        }
+        return distance;
+    }
+
+    // Envoi d'une commande reconnue sur le bus Ivy
+    private void envoyerCommandeReconnaissance(String commandName) {
+        try {
+            bus.sendMsg("Geste nom=" + commandName);
+        } catch (IvyException e) {
+            e.printStackTrace();
+        }
+    }
+    public static void main(String[] args) {
+        try {
+            new RecoGeste();
+        } catch (IvyException e) {
+            e.printStackTrace();
+        }
+    }
+
+}
