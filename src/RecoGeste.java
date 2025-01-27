@@ -1,7 +1,4 @@
-import fr.dgac.ivy.Ivy;
-import fr.dgac.ivy.IvyClient;
-import fr.dgac.ivy.IvyException;
-import fr.dgac.ivy.IvyMessageListener;
+import fr.dgac.ivy.*;
 
 import java.io.*;
 import java.util.HashMap;
@@ -21,7 +18,7 @@ public class RecoGeste implements IvyMessageListener {
         this.mode = mode;
     }
 
-    private Mode mode = Mode.APPRENTISSAGE;
+    private Mode mode = Mode.RECONNAISSANCE;
     private Ivy bus;
     Scanner scanner = new Scanner(System.in);
     public RecoGeste() throws IvyException{
@@ -30,7 +27,8 @@ public class RecoGeste implements IvyMessageListener {
             gestureDictionary = new HashMap<>();
         }
         bus = new Ivy("InteractionPalette", "InteractionPalette Ready", null);
-        bus.start("127.0.0.1:2010");
+
+        bus.start("127.255.255.255:2010");
 
         bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
             currentStroke = new Stroke();
@@ -157,7 +155,6 @@ public class RecoGeste implements IvyMessageListener {
         }
         System.out.println("Distance minimale : " + minDistance);
         if (recognizedCommand != null && minDistance < treshold) {
-            bus.sendMsg("^Geste:Forme nom=" + recognizedCommand);
             System.out.println("Geste reconnu : " + recognizedCommand + "distance :" + minDistance);
             envoyerCommandeReconnaissance(recognizedCommand);
         } else {
@@ -182,7 +179,7 @@ public class RecoGeste implements IvyMessageListener {
     // Envoi d'une commande reconnue sur le bus Ivy
     private void envoyerCommandeReconnaissance(String commandName) {
         try {
-            bus.sendMsg("^Geste:Forme nom="  + commandName);
+            bus.sendMsg("Geste:Forme nom="  + commandName);
         } catch (IvyException e) {
             e.printStackTrace();
         }

@@ -36,29 +36,16 @@ public class vocal_ivy extends JFrame {
 
         try {
             // Gestion des messages de reconnaissance vocale
-            bus.bindMsg("^sra5 Parsed=(.*) Confidence=(.*) NP=.*", new IvyMessageListener() {
+            bus.bindMsg("^sra5 Text=(.*) Confidence=(.*)", new IvyMessageListener() {
                 public void receive(IvyClient client, String[] args) {
-                    String type = args[0]; // Type : "boisson" ou "solide"
-                    String plat = args[1]; // Plat reconnu
-                    String test = args[2];
-                    System.out.println("Message reçu : " + plat+" "+type + " "+test);
-                    /*
-                    float confiance = Float.parseFloat(args[2].replace(",", "."));
 
-
-                    if (confiance > 0.75) { // Seuil de confiance
-                        String message = type + ": " + plat;
-                        listModel.addElement(message); // Ajoute le plat à la liste
-                        platsList.ensureIndexIsVisible(listModel.size() - 1); // Scroll automatique
-                        System.out.println("Ajout de " + plat + " dans la liste");
-                    } else {
-                        try {
-                            bus.sendMsg("ppilot5 Say=Je n'ai pas bien compris, veuillez répéter s'il vous plaît");
-                        } catch (IvyException ie) {
-                            System.out.println("Erreur lors de l'envoi du message vocal.");
-                        }
+                    System.out.println("Message reçu : "+ args[0]);
+                    try {
+                        bus.sendMsg("Geste:RecoVoc designation="+"COULEUR");
+                    } catch (IvyException ie) {
+                        System.out.println("Erreur lors de l'envoi du message vocal.");
                     }
-                    */
+
 
                 }
             });

@@ -1,9 +1,6 @@
 package fusion;
 
-import fr.dgac.ivy.Ivy;
-import fr.dgac.ivy.IvyClient;
-import fr.dgac.ivy.IvyException;
-import fr.dgac.ivy.IvyMessageListener;
+import fr.dgac.ivy.*;
 
 import java.util.Date;
 import java.util.Timer;
@@ -25,7 +22,7 @@ public class FusionStateMachine implements IvyMessageListener {
     public FusionStateMachine() throws IvyException {
         this.state = State.Idle;
         bus = new Ivy("Fusion", "Fusion Ready", null);
-        bus.start("127.0.0.1:2010");
+        bus.start("127.255.255.255:2010");
 
 
         //bind to reco2D
