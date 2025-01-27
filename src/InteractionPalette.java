@@ -10,7 +10,7 @@ public class InteractionPalette implements IvyMessageListener {
     public InteractionPalette() throws IvyException {
         // Initialisation du bus IVY
         bus = new Ivy("InteractionPalette", "InteractionPalette Ready", null);
-        bus.start(null);
+        bus.start("127.0.0.1:2010");
 
         // Affiche tous les messages provenant de la Palette
         bus.bindMsg(".*", (client, args) -> {

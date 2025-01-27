@@ -26,15 +26,16 @@ public class FusionStateMachine implements IvyMessageListener {
         this.state = State.Idle;
         bus = new Ivy("Fusion", "Fusion Ready", null);
         bus.start("127.0.0.1:2010");
-        bus.sendToSelf(true);
 
 
         //bind to reco2D
         bus.bindMsg("^Geste:Forme nom=(.*)", (client, args) -> {
+            System.out.println("Forme reconnue : " + args[0]);
             switch (state) {
                 case Idle:
                     switch(args[0]){
-                        case "circle":
+                        case "cercle":
+
                             dessinerCercle(10,10, "black");
                             break;
                         case "rectangle":
@@ -104,25 +105,32 @@ public class FusionStateMachine implements IvyMessageListener {
                 case Create:
                     /* DEUX POSSIBILITES : Vers couleur ou vers position
                     *   1. Ecouter la designation pour savoir si c'est "COULEUR" ou "POSITION"
+                    *   Timeout => Idle
                     *   2. Si c'est "COULEUR", changer l'état en "Color"
                     *   3. Si c'est "POSITION", changer l'état en "Position"
+                    *   4
                     * */
                     break;
                 case Color:
                     /* Regarder la position du curseur (sur objet)
                     *  Écouter la designation
+                    *  Si Timeout => Idle
                     *  Si c'est COULEUR changer la couleur de l'objet
+                    *  Reveneir à Idle
                     * */
                     break;
                 case Position:
                     /* Regarder la position du curseur (sur canva)
                      *  Écouter la designation
+                     *  Timeout => Idle
                      *  Si c'est POSITION, changer la position de l'objet
+                     *  Revenir à Idle
                      * */
                     break;
                 case Selected:
                     /* Regarder la position du curseur (sur canva)
                      *  Écouter la designation
+                     *  Timeout => Idle
                      *  Si c'est POSITION, changer la position de l'objet
                      *  Changer vers l'état Position
                      * */
