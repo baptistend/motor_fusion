@@ -1,14 +1,20 @@
 import fr.dgac.ivy.*;
 
+import java.awt.*;
 import java.io.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Scanner;
+import java.util.*;
+import java.util.List;
 
+/**
+ * dessiner cercle = cercle
+ * dessiner rectangle = rectangle
+ * action deplacer = deplacer
+ */
 public class RecoGeste implements IvyMessageListener {
     private static final String FILE_PATH = "gestures.ser";
     private Stroke currentStroke;
     private Map<String, Stroke> gestureDictionary;
+
     private double treshold = 268.0;
     public Mode getMode() {
         return mode;
@@ -32,7 +38,6 @@ public class RecoGeste implements IvyMessageListener {
 
         bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
             currentStroke = new Stroke();
-            dessinerCercle(args, "green");
             if (mode == Mode.APPRENTISSAGE) {
                 currentStroke.init(); // Réinitialisation du tracé
                 currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
@@ -41,22 +46,26 @@ public class RecoGeste implements IvyMessageListener {
         // Gestion des événements de souris pour dessiner des cercles
         bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
             currentStroke = new Stroke();
-            dessinerCercle(args, "green");
             if (mode == Mode.APPRENTISSAGE) {
                 currentStroke.init(); // Réinitialisation du tracé
                 currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
             }
         });
+        bus.bindMsg("Palette:ResultatTesterPoint x=(\\d+) y=(\\d+) nom=(.*)", (client, args) -> {
+            try {
 
+                bus.sendMsg("Palette:SupprimerObjet nom="+args[2]);
+            } catch (IvyException e) {
+                e.printStackTrace();
+            }
+        });
         bus.bindMsg("^Palette:MouseDragged x=(\\d+) y=(\\d+)", (client, args) -> {
-            dessinerCercle(args, "gray");
             if (mode == Mode.APPRENTISSAGE || mode == Mode.RECONNAISSANCE) {
                 currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
             }
         });
 
         bus.bindMsg("^Palette:MouseReleased x=(\\d+) y=(\\d+)", (client, args) -> {
-            dessinerCercle(args, "red");
             if (mode == Mode.APPRENTISSAGE) {
                 apprendreGeste(); // Apprentissage du geste
             } else if (mode == Mode.RECONNAISSANCE) {
@@ -66,7 +75,6 @@ public class RecoGeste implements IvyMessageListener {
                     throw new RuntimeException(e);
                 }
             }
-            effacerTracesApresDelai();
         });
 
     }
@@ -96,33 +104,7 @@ public class RecoGeste implements IvyMessageListener {
         }
     }
 
-    // Méthode pour dessiner un cercle
-    private void dessinerCercle(String[] args, String couleur) {
-        int x = Integer.parseInt(args[0]);
-        int y = Integer.parseInt(args[1]);
-        String circleMsg = String.format("Palette:CreerEllipse x=%d y=%d longueur=10 hauteur=10 couleurFond=%s", x - 5, y - 5, couleur);
-        try {
-            bus.sendMsg(circleMsg);
-            currentStroke.addPoint(x, y);
-            System.out.println("Cercle " + couleur + " créé autour du pointeur (" + x + ", " + y + ")");
-        } catch (IvyException e) {
-            e.printStackTrace();
-        }
-    }
 
-    // Méthode pour effacer les traces après un délai
-    private void effacerTracesApresDelai() {
-        new Thread(() -> {
-            try {
-                Thread.sleep(1000); // Délai de 1 seconde
-                currentStroke = new Stroke();
-                bus.sendMsg("Palette:SupprimerTout");
-                System.out.println("Traces effacées.");
-            } catch (InterruptedException | IvyException e) {
-                e.printStackTrace();
-            }
-        }).start();
-    }
 
     @Override
     public void receive(IvyClient client, String[] args) {
@@ -179,7 +161,7 @@ public class RecoGeste implements IvyMessageListener {
     // Envoi d'une commande reconnue sur le bus Ivy
     private void envoyerCommandeReconnaissance(String commandName) {
         try {
-            bus.sendMsg("Geste:Forme nom="  + commandName);
+            bus.sendMsg("Geste:Forme nom=" + commandName);
         } catch (IvyException e) {
             e.printStackTrace();
         }

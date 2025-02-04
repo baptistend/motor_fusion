@@ -39,7 +39,7 @@ public class vocal_ivy extends JFrame {
             bus.bindMsg("^sra5 Text=(.*) Confidence=(.*)", new IvyMessageListener() {
                 public void receive(IvyClient client, String[] args) {
 
-                    System.out.println("Message reçu : "+ args[0]);
+                    System.out.println("Message reçu : "+ args[0] + "/" + args[1]);
                     try {
                         bus.sendMsg("Geste:RecoVoc designation="+"COULEUR");
                     } catch (IvyException ie) {
