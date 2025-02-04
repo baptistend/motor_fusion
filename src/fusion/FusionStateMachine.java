@@ -21,6 +21,24 @@ public class FusionStateMachine implements IvyMessageListener {
     private boolean isCursorOnObject = false;
     private String selectedObject = "";
     private Point cursorCoordinates = null;
+
+    private void startTimeout() {
+        if (T1 != null) {
+            T1.cancel();
+        }
+        T1 = new Timer();
+        T1.schedule(new TimerTask() {
+            @Override
+            public void run() {
+                handleTimeout();
+            }
+        }, 2000); // 2 secondes
+    }
+
+    private void handleTimeout() {
+        System.out.println("Timeout ! Retour à l'état Idle.");
+        state = State.Idle;
+    }
     public FusionStateMachine() throws IvyException {
         this.state = State.Idle;
         bus = new Ivy("Fusion", "Fusion Ready", null);
@@ -38,14 +56,17 @@ public class FusionStateMachine implements IvyMessageListener {
 
                             dessinerCercle(100,100, "yellow");
                             this.state = State.Create;
+                            startTimeout();
                             break;
                         case "rectangle":
                             dessinerRectangle(90,90, "red");
                             this.state = State.Create;
+                            startTimeout();
 
                             break;
                         case "deplacer":
                             this.state = State.Move;
+                            System.out.println("Changement d'état vers Move");
                             break;
                         default:
                             break;
@@ -109,8 +130,11 @@ public class FusionStateMachine implements IvyMessageListener {
                     break;
                 case Move:
                     //Faire un test sur la designation pour savoir si c'est "OBJET"
-                    if (designation.equals("objet") && isCursorOnObject )
+                    if (designation.equals("objet") && isCursorOnObject ){
+                        System.out.println("Changement d'état vers Selected");
                         this.state = State.Selected;
+
+                    }
 
                     break;
                 case Create:
@@ -145,9 +169,12 @@ public class FusionStateMachine implements IvyMessageListener {
                      *  Si c'est POSITION, changer la position de l'objet
                      *  Changer vers l'état Position
                      * */
-                    if (designation.equals("position") && !isCursorOnObject )
+                    if (designation.equals("position") && !isCursorOnObject ){
                         moveItem(selectedObject, cursorCoordinates);
                         this.state = State.Position;
+                        System.out.println("Changement d'état vers Position");
+                    }
+
 
                     break;
                 default:
@@ -159,13 +186,11 @@ public class FusionStateMachine implements IvyMessageListener {
         //Reco palette
         //S'envoie dans tous les cas après un test de point
         bus.bindMsg("Palette:FinTesterPoint x=(\\d+) y=(\\d+)",  (client, args) -> {
-            System.out.println("FinTesterPoint x=" + args[0] + " y=" + args[1]);
             //dessinerCercle(Integer.parseInt(args[0]), Integer.parseInt(args[1]), "green");
         });
 
         //S'envoie que si un objet est bien sous le curseur
         bus.bindMsg("Palette:ResultatTesterPoint x=(\\d+) y=(\\d+) nom=(.*)", (client, args) -> {
-            System.out.println("ResultatTesterPoint x=" + args[0] + " y=" + args[1] + " nom=" + args[2]);
             //dessinerCercle(args, "green");
             isCursorOnObject = true;
             selectedObject = args[2];
@@ -176,11 +201,10 @@ public class FusionStateMachine implements IvyMessageListener {
             double x = Double.parseDouble(args[0]);
             double y = Double.parseDouble(args[1]);
 
-            System.out.println("MouseMoved x=" + args[0] + " y=" + args[1]);
             try {
                 isCursorOnObject = false;
                 cursorCoordinates = new Point((int)x,(int)y);
-                bus.sendMsg("TesterPoint x=" + x + " y=" + y);
+                bus.sendMsg("Palette:TesterPoint x=" + (int)x + " y=" + (int)y);
             } catch (IvyException e) {
                 throw new RuntimeException(e);
             }
@@ -190,7 +214,7 @@ public class FusionStateMachine implements IvyMessageListener {
     }
 
     private void moveItem(String selectedObject, Point cursorCoordinate) {
-        String moveMsg = String.format("Palette:DeplacerObjetAbsolu nom=%s x=%d y=%d ", selectedObject, (int)cursorCoordinate.getY() - 5, (int)cursorCoordinate.getY() - 5);
+        String moveMsg = String.format("Palette:DeplacerObjetAbsolu nom=%s x=%d y=%d ", selectedObject, (int)cursorCoordinate.getX() , (int)cursorCoordinate.getY());
         try {
 
             bus.sendMsg(moveMsg);

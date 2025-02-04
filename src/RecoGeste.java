@@ -51,14 +51,7 @@ public class RecoGeste implements IvyMessageListener {
                 currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
             }
         });
-        bus.bindMsg("Palette:ResultatTesterPoint x=(\\d+) y=(\\d+) nom=(.*)", (client, args) -> {
-            try {
 
-                bus.sendMsg("Palette:SupprimerObjet nom="+args[2]);
-            } catch (IvyException e) {
-                e.printStackTrace();
-            }
-        });
         bus.bindMsg("^Palette:MouseDragged x=(\\d+) y=(\\d+)", (client, args) -> {
             if (mode == Mode.APPRENTISSAGE || mode == Mode.RECONNAISSANCE) {
                 currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
