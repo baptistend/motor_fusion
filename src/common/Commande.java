@@ -1,4 +1,6 @@
-package fusion;
+package common;
+
+import fusion.Designation;
 
 import java.awt.*;
 

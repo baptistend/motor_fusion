@@ -32,7 +32,7 @@ public class RecoGeste implements IvyMessageListener {
         if (gestureDictionary == null) {
             gestureDictionary = new HashMap<>();
         }
-        bus = new Ivy("InteractionPalette", "InteractionPalette Ready", null);
+        bus = new Ivy("RecoGeste", "RecoGeste Ready", null);
 
         bus.start(adresse);
 

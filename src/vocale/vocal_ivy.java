@@ -23,17 +23,23 @@ public class vocal_ivy {
 
         try {
             // Gestion des messages de reconnaissance vocale
-            bus.bindMsg("^sra5 Parsed=(.*) Confidence=(.*)", new IvyMessageListener() {
+            bus.bindMsg("^sra5 Parsed=(.*) Confidence=(.*) NP=(.*) Num_A=(.*)", new IvyMessageListener() {
                 public void receive(IvyClient client, String[] args) {
                     String textReceived = args[0]; // Couleur, Position or Objet
-
-                    System.out.println("Message reçu : "+ args[0] + "/" + args[1]);
+                    double confidence = Double.parseDouble(args[1].replace(",", "."));
+                    System.out.println("Message reçu : "+ args[0] + "/" + args[1] );
                     try {
-                        bus.sendMsg("Geste:RecoVoc designation="+textReceived);
+                        if (confidence < 0.5) {
+                            bus.sendMsg("ppilot5 Say=Je n'ai pas compris");
+                            return;
+                        }
+                        else{
+                            bus.sendMsg("Geste:RecoVoc designation="+textReceived);
+
+                        }
                     } catch (IvyException ie) {
                         System.out.println("Erreur lors de l'envoi du message vocal.");
                     }
-
 
                 }
             });
