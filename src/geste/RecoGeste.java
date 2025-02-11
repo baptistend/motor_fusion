@@ -1,9 +1,9 @@
+package geste;
+
 import fr.dgac.ivy.*;
 
-import java.awt.*;
 import java.io.*;
 import java.util.*;
-import java.util.List;
 
 /**
  * dessiner cercle = cercle
@@ -27,14 +27,14 @@ public class RecoGeste implements IvyMessageListener {
     private Mode mode = Mode.RECONNAISSANCE;
     private Ivy bus;
     Scanner scanner = new Scanner(System.in);
-    public RecoGeste() throws IvyException{
+    public RecoGeste(String adresse) throws IvyException{
         gestureDictionary = loadGestureDictionary();
         if (gestureDictionary == null) {
             gestureDictionary = new HashMap<>();
         }
         bus = new Ivy("InteractionPalette", "InteractionPalette Ready", null);
 
-        bus.start("127.255.255.255:2010");
+        bus.start(adresse);
 
         bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
             currentStroke = new Stroke();
@@ -120,6 +120,9 @@ public class RecoGeste implements IvyMessageListener {
     private void reconnaitreGeste() throws IvyException {
         String recognizedCommand = null;
         double minDistance = Double.MAX_VALUE;
+        if (currentStroke == null) {
+            return;
+        }
         currentStroke.normalize();
         for (Map.Entry<String, Stroke> entry : gestureDictionary.entrySet()) {
             double distance = calculateDistance(currentStroke, entry.getValue());
@@ -161,7 +164,7 @@ public class RecoGeste implements IvyMessageListener {
     }
     public static void main(String[] args) {
         try {
-            new RecoGeste();
+            new RecoGeste("127.255.255.255:2010");
         } catch (IvyException e) {
             e.printStackTrace();
         }

@@ -1,3 +1,5 @@
+package geste;
+
 import fr.dgac.ivy.IvyException;
 
 import javax.swing.*;
@@ -9,11 +11,11 @@ public class ModeSwitcher extends JFrame {
     private final RecoGeste recoGeste;
 
     public ModeSwitcher() throws IvyException {
-        // Initialize RecoGeste instance
-        recoGeste = new RecoGeste();
+        // Initialize geste.RecoGeste instance
+        recoGeste = new RecoGeste("127.255.255.255:2010");
 
         // Set up the JFrame
-        setTitle("Mode Switcher");
+        setTitle("geste.Mode Switcher");
         setSize(300, 150);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
@@ -41,7 +43,7 @@ public class ModeSwitcher extends JFrame {
 
 
         // Status label
-        JLabel statusLabel = new JLabel("Mode: " + recoGeste.getMode(), SwingConstants.CENTER);
+        JLabel statusLabel = new JLabel("geste.Mode: " + recoGeste.getMode(), SwingConstants.CENTER);
         add(statusLabel, BorderLayout.NORTH);
 
         // Panel for buttons

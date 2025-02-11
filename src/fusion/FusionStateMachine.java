@@ -11,17 +11,16 @@ public class FusionStateMachine implements IvyMessageListener {
     enum State {
         Idle,
         Create,
-        Color,
-        Position,
         Move,
         Selected
     }
     private State state;
-    private Timer T1;
+    private Timer T1; // Timer to handle delay before returning to Idle
     private boolean isCursorOnObject = false;
     private String selectedObject = "";
     private Point cursorCoordinates = null;
-
+    private Point rectangleSize = new Point(200,120);
+    private Point circleSize = new Point(100,100);
     private void startTimeout() {
         if (T1 != null) {
             T1.cancel();
@@ -32,17 +31,38 @@ public class FusionStateMachine implements IvyMessageListener {
             public void run() {
                 handleTimeout();
             }
-        }, 2000); // 2 secondes
+        }, 5000); // 2 secondes
     }
 
     private void handleTimeout() {
         System.out.println("Timeout ! Retour à l'état Idle.");
-        state = State.Idle;
+        switch (state) {
+            case Idle:
+                state = State.Idle;
+                break;
+            case Move:
+                state = State.Idle;
+
+                break;
+            case Create:
+                state = State.Idle;
+
+                break;
+
+
+            case Selected:
+                state = State.Idle;
+
+                break;
+            default:
+                break;
+        }
     }
-    public FusionStateMachine() throws IvyException {
+    public FusionStateMachine(String adresse) throws IvyException {
+
         this.state = State.Idle;
         bus = new Ivy("Fusion", "Fusion Ready", null);
-        bus.start("127.255.255.255:2010");
+        bus.start(adresse);
 
 
         //bind to reco2D
@@ -54,12 +74,12 @@ public class FusionStateMachine implements IvyMessageListener {
                     switch(shape){
                         case "cercle":
 
-                            dessinerCercle(100,100, "yellow");
+                            dessinerCercle( "yellow");
                             this.state = State.Create;
                             startTimeout();
                             break;
                         case "rectangle":
-                            dessinerRectangle(90,90, "red");
+                            dessinerRectangle( "red");
                             this.state = State.Create;
                             startTimeout();
 
@@ -78,12 +98,8 @@ public class FusionStateMachine implements IvyMessageListener {
                 case Create:
                     System.out.println("Impossible de créer une forme quand State=Create.");
                     break;
-                case Color:
-                    System.out.println("Impossible de créer une forme quand State=Color.");
-                    break;
-                case Position:
-                    System.out.println("Impossible de créer une forme quand State=Position.");
-                    break;
+
+
                 case Selected:
                     System.out.println("Impossible de créer une forme quand State=Selected.");
                     break;
@@ -97,6 +113,7 @@ public class FusionStateMachine implements IvyMessageListener {
             switch (state) {
                 case Idle:
                     this.state = State.Move;
+                    startTimeout();
                     break;
                 case Move:
                     System.out.println("Retour à l'état Idle");
@@ -105,12 +122,8 @@ public class FusionStateMachine implements IvyMessageListener {
                 case Create:
                     System.out.println("Impossible de bouger quand State=Create.");
                     break;
-                case Color:
-                    System.out.println("Impossible de bouger quand State=Color.");
-                    break;
-                case Position:
-                    System.out.println("Impossible de bouger quand State=Position.");
-                    break;
+
+
                 case Selected:
                     System.out.println("Impossible de bouger quand State=Selected.");
                     break;
@@ -133,9 +146,8 @@ public class FusionStateMachine implements IvyMessageListener {
                     if (designation.equals("objet") && isCursorOnObject ){
                         System.out.println("Changement d'état vers Selected");
                         this.state = State.Selected;
-
+                        startTimeout();
                     }
-
                     break;
                 case Create:
                     /* DEUX POSSIBILITES : Vers couleur ou vers position
@@ -143,25 +155,23 @@ public class FusionStateMachine implements IvyMessageListener {
                     *   Timeout => Idle
                     *   2. Si c'est "COULEUR", changer l'état en "Color"
                     *   3. Si c'est "POSITION", changer l'état en "Position"
-                    *   4
                     * */
+                    if (Color.getColor(designation) != null){
+                        this.state = State.Create;
+                        //change color
+                        T1.cancel();
+                        startTimeout();
+                    } else if (designation.equals("position")){
+                        //change position
+                        moveItem(selectedObject, cursorCoordinates);
+                        this.state = State.Create;
+                        T1.cancel();
+
+                        startTimeout();
+                    }
                     break;
-                case Color:
-                    /* Regarder la position du curseur (sur objet)
-                    *  Écouter la designation
-                    *  Si Timeout => Idle
-                    *  Si c'est COULEUR changer la couleur de l'objet
-                    *  Reveneir à Idle
-                    * */
-                    break;
-                case Position:
-                    /* Regarder la position du curseur (sur canva)
-                     *  Écouter la designation
-                     *  Timeout => Idle
-                     *  Si c'est POSITION, changer la position de l'objet
-                     *  Revenir à Idle
-                     * */
-                    break;
+
+
                 case Selected:
                     /* Regarder la position du curseur (sur canva)
                      *  Écouter la designation
@@ -171,8 +181,9 @@ public class FusionStateMachine implements IvyMessageListener {
                      * */
                     if (designation.equals("position") && !isCursorOnObject ){
                         moveItem(selectedObject, cursorCoordinates);
-                        this.state = State.Position;
-                        System.out.println("Changement d'état vers Position");
+                        this.state = State.Idle;
+                        T1.cancel();
+                        System.out.println("Changement d'état vers Idle");
                     }
 
 
@@ -224,28 +235,24 @@ public class FusionStateMachine implements IvyMessageListener {
         }
     }
 
-    private void handeTimeout(){
 
-    }
-
-    private void dessinerRectangle(int x, int y, String color) {
-        String circleMsg = String.format("Palette:CreerRectangle x=%d y=%d longueur=10 hauteur=10 couleurFond=%s", x - 5, y - 5, color);
+    private void dessinerRectangle( String color) {
+        String circleMsg = String.format("Palette:CreerRectangle x=%d y=%d longueur=%d hauteur=%d couleurFond=%s", (int)cursorCoordinates.getX() - 5, (int)cursorCoordinates.getY() - 5,
+                (int)rectangleSize.getX(), (int)rectangleSize.getY(), color);
         try {
 
             bus.sendMsg(circleMsg);
-            System.out.println("Cercle " + color + " créé autour du pointeur (" + x + ", " + y + ")");
         } catch (IvyException e) {
             e.printStackTrace();
         }
     }
 
-    private void dessinerCercle(int x, int y , String couleur) {
+    private void dessinerCercle( String couleur) {
 
-        String circleMsg = String.format("Palette:CreerEllipse x=%d y=%d longueur=25 hauteur=25 couleurFond=%s", x - 5, y - 5, couleur);
+        String circleMsg = String.format("Palette:CreerEllipse x=%d y=%d longueur=%d hauteur=%d couleurFond=%s", (int)cursorCoordinates.getX() - 5, (int)cursorCoordinates.getY() - 5,(int)circleSize.getX(), (int)circleSize.getY(), couleur);
 
         try {
             bus.sendMsg(circleMsg);
-            System.out.println("Cercle " + couleur + " créé autour du pointeur (" + x + ", " + y + ")");
         } catch (IvyException e) {
             e.printStackTrace();
         }
@@ -257,7 +264,7 @@ public class FusionStateMachine implements IvyMessageListener {
 
     public static void main(String[] args) {
         try {
-            new FusionStateMachine();
+            new FusionStateMachine("127.255.255.255:2010");
         } catch (IvyException e) {
             e.printStackTrace();
         }
