@@ -78,6 +78,9 @@ public class Fusion implements IvyMessageListener {
         });
 
         bus.bindMsg("Palette:MouseMoved x=(\\d+) y=(\\d+)", ((client, args) -> {
+            if( args.length < 2){
+                return;
+            }
             double x = Double.parseDouble(args[0]);
             double y = Double.parseDouble(args[1]);
 
@@ -117,7 +120,6 @@ public class Fusion implements IvyMessageListener {
             case Create:
                 state = State.Idle;
                 break;
-
 
             case Selected:
                 state = State.Idle;
@@ -262,6 +264,10 @@ public class Fusion implements IvyMessageListener {
         }
     }
     private void dessinerRectangle( String color) {
+        if (cursorCoordinates == null) {
+            System.out.println("Cursor coordinates are null");
+            return;
+        }
         String circleMsg = String.format("Palette:CreerRectangle x=%d y=%d longueur=%d hauteur=%d couleurFond=%s", (int)cursorCoordinates.getX() , (int)cursorCoordinates.getY() ,
                 (int)rectangleSize.getX(), (int)rectangleSize.getY(), color);
         try {
@@ -273,7 +279,10 @@ public class Fusion implements IvyMessageListener {
     }
 
     private void dessinerCercle( String couleur) {
-
+        if (cursorCoordinates == null) {
+            System.out.println("Cursor coordinates are null");
+            return;
+        }
         String circleMsg = String.format("Palette:CreerEllipse x=%d y=%d longueur=%d hauteur=%d couleurFond=%s", (int)cursorCoordinates.getX() - offset, (int)cursorCoordinates.getY() - offset ,(int)circleSize.getX(), (int)circleSize.getY(), couleur);
         System.out.println(cursorCoordinates.getX() + " " + cursorCoordinates.getY());
         try {

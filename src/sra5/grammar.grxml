@@ -25,11 +25,9 @@
 
   <rule id="objet">
     <one-of>
-      <item>ça</item>
+      <item>sa</item>
       <item>lui</item>
-      <item>celui-ci</item>
-      <item>celui-là</item>
-      <item>ceci</item>
+
     </one-of>
     <tag>out="objet";</tag>
   </rule>
@@ -37,21 +35,15 @@
   <rule id="position">
     <one-of>
       <item>ici</item>
-      <item>là</item>
     </one-of>
     <tag>out="position";</tag>
   </rule>
 
   <rule id="couleur">
     <one-of>
-      <item>rouge<tag>out="red";</tag></item>
       <item>bleu<tag>out="blue";</tag></item>
-      <item>vert<tag>out="green";</tag></item>
-      <item>jaune<tag>out="yellow";</tag></item>
-      <item>noir<tag>out="black";</tag></item>
-      <item>blanc<tag>out="white";</tag></item>
-      <item>orange<tag>out="orange";</tag></item>
-      <item>violet<tag>out="magenta";</tag></item>
+      <item>noire<tag>out="black";</tag></item>
+      <item>violer<tag>out="magenta";</tag></item>
       <item>rose<tag>out="pink";</tag></item>
     </one-of>
   </rule>

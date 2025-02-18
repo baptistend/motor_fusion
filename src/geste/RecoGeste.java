@@ -36,24 +36,19 @@ public class RecoGeste implements IvyMessageListener {
 
         bus.start(adresse);
 
-        bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
-            currentStroke = new Stroke();
-            if (mode == Mode.APPRENTISSAGE) {
-                currentStroke.init(); // Réinitialisation du tracé
-                currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
-            }
-        });
+
         // Gestion des événements de souris pour dessiner des cercles
         bus.bindMsg("^Palette:MousePressed x=(\\d+) y=(\\d+)", (client, args) -> {
             currentStroke = new Stroke();
-            if (mode == Mode.APPRENTISSAGE) {
+            if (mode == Mode.APPRENTISSAGE && args.length >= 2) {
                 currentStroke.init(); // Réinitialisation du tracé
+
                 currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
             }
         });
 
         bus.bindMsg("^Palette:MouseDragged x=(\\d+) y=(\\d+)", (client, args) -> {
-            if (mode == Mode.APPRENTISSAGE || mode == Mode.RECONNAISSANCE) {
+            if (mode == Mode.APPRENTISSAGE || mode == Mode.RECONNAISSANCE && args.length >= 2) {
                 currentStroke.addPoint(Integer.parseInt(args[0]), Integer.parseInt(args[1]));
             }
         });
@@ -120,7 +115,7 @@ public class RecoGeste implements IvyMessageListener {
     private void reconnaitreGeste() throws IvyException {
         String recognizedCommand = null;
         double minDistance = Double.MAX_VALUE;
-        if (currentStroke == null) {
+        if (currentStroke.isEmpty() ){
             return;
         }
         currentStroke.normalize();
