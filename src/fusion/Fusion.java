@@ -49,6 +49,11 @@ public class Fusion implements IvyMessageListener {
         }
 
     };
+
+    /**
+     * Initialize bus binding
+     * @throws IvyException
+     */
     private void initBusBinding() throws IvyException {
         //bind to reco2D
         bus.sendMsg("Palette:SupprimerTout");
@@ -105,7 +110,7 @@ public class Fusion implements IvyMessageListener {
             public void run() {
                 handleTimeout();
             }
-        }, 5000); // 2 secondes
+        }, 5000); // 5 secondes
     }
 
     private void handleTimeout() {
@@ -139,6 +144,10 @@ public class Fusion implements IvyMessageListener {
         }
     }
 
+    /**
+     * Handle vocal recognition success
+     * @param designation
+     */
     private void handleVocalRecognition(String designation){
         switch (state) {
             case Idle:
@@ -156,8 +165,6 @@ public class Fusion implements IvyMessageListener {
                 /* DEUX POSSIBILITES : Vers couleur ou vers position
                  *   1. Ecouter la designation pour savoir si c'est "COULEUR" ou "POSITION"
                  *   Timeout => Idle
-                 *   2. Si c'est "COULEUR", changer l'état en "Color"
-                 *   3. Si c'est "POSITION", changer l'état en "Position"
                  * */
                 if (isValidColor(designation) && isCursorOnObject){
                     this.state = State.Create;
@@ -185,7 +192,6 @@ public class Fusion implements IvyMessageListener {
                  *  Écouter la designation
                  *  Timeout => Idle
                  *  Si c'est POSITION, changer la position de l'objet
-                 *  Changer vers l'état Position
                  * */
                 if (designation.equals("position") && !isCursorOnObject ){
                     moveItem(selectedObject, cursorCoordinates);
@@ -201,6 +207,10 @@ public class Fusion implements IvyMessageListener {
                 break;
         }
     }
+
+    /**
+     * Handle move received
+     */
     private void handleMoveReceived(){
         switch (state) {
             case Idle:
@@ -224,6 +234,11 @@ public class Fusion implements IvyMessageListener {
                 break;
         }
     }
+
+    /**
+     * Handle shape recognized
+     * @param shape
+     */
     private void handleShapeReceived(String shape){
         switch (state) {
             case Idle:
@@ -263,6 +278,11 @@ public class Fusion implements IvyMessageListener {
                 break;
         }
     }
+
+    /**
+     * draw a rectangle
+     * @param color
+     */
     private void dessinerRectangle( String color) {
         if (cursorCoordinates == null) {
             System.out.println("Cursor coordinates are null");
@@ -278,6 +298,10 @@ public class Fusion implements IvyMessageListener {
         }
     }
 
+    /**
+     * draw a circle
+     * @param couleur
+     */
     private void dessinerCercle( String couleur) {
         if (cursorCoordinates == null) {
             System.out.println("Cursor coordinates are null");
@@ -296,6 +320,11 @@ public class Fusion implements IvyMessageListener {
 
     }
 
+    /**
+     * Check if the color is valid
+     * @param designation
+     * @return
+     */
     public static boolean isValidColor(String designation) {
         try {
             Field field = Color.class.getField(designation.toLowerCase());

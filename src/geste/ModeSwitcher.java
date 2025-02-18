@@ -7,13 +7,16 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
+/**
+ * ModeSwitcher is a simple GUI application that allows the user to add gestures to the gesture dictionary
+ */
 public class ModeSwitcher extends JFrame {
     private final RecoGeste recoGeste;
 
     public ModeSwitcher() throws IvyException {
         // Initialize geste.RecoGeste instance
         recoGeste = new RecoGeste("127.255.255.255:2010");
-
+        recoGeste.setMode(Mode.APPRENTISSAGE);
         // Set up the JFrame
         setTitle("geste.Mode Switcher");
         setSize(300, 150);
