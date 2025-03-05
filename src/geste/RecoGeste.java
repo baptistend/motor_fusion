@@ -15,7 +15,7 @@ public class RecoGeste implements IvyMessageListener {
     private Stroke currentStroke;
     private Map<String, Stroke> gestureDictionary;
 
-    private double treshold = 268.0;
+    private double treshold = 350.0;
     public Mode getMode() {
         return mode;
     }
